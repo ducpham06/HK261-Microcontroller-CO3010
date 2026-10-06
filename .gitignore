@@ -1,0 +1,21 @@
+# STM32CubeIDE build outputs
+Debug/
+Release/
+*.elf
+*.bin
+*.map
+*.o
+*.d
+*.su
+
+# Ignore hex inside build folders (remove this line if you must track Debug/*.hex)
+Debug/*.hex
+Release/*.hex
+
+# Eclipse / STM32CubeIDE local settings
+.settings/
+
+# Proteus temporary and backup files
+*.pdsbak
+*.workspace
+*.pdsprj.*.workspace
