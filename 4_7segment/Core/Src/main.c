@@ -32,26 +32,19 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-/* ---- Software timers ---- */
-#define TIMER_CYCLE         10      /* ms, period of the TIM2 interrupt          */
-#define NUM_TIMERS          4
-#define TMR_CLOCK           0       /* 1 s : clock tick + DOT blink  (Ex 5, 7)   */
-#define TMR_7SEG            1       /* 7-seg scanning                (Ex 3, 4, 8)*/
-#define TMR_MATRIX          2       /* LED matrix scanning           (Ex 9)      */
-#define TMR_ANIM            3       /* matrix animation step         (Ex 10)     */
+#define TIMER_CYCLE          10
+#define NUM_TIMERS           4
+#define TMR_CLOCK            0
+#define TMR_7SEG             1
+#define TMR_MATRIX           2
+#define TMR_ANIM             3
 
-#define CLOCK_PERIOD_MS     1000
-#define SEG_SCAN_MS         250     /* 4 digits x 250 ms -> 1 Hz scan (Ex 4)     */
-#define MATRIX_SCAN_MS      10      /* 8 columns x 10 ms -> 12.5 Hz              */
-#define ANIM_STEP_MS        200     /* shift one column every 200 ms             */
+#define CLOCK_PERIOD_MS      1000
+#define SEG_SCAN_MS          250
+#define MATRIX_SCAN_MS       10
+#define ANIM_STEP_MS         200
 
-/* LED matrix polarity (depends on how the Proteus matrix is oriented):
- * 0 : pins on the ULN2803 side (COLx) are cathodes
- *     -> ENM HIGH selects a column, ROW HIGH lights an LED
- * 1 : pins on the ULN2803 side (COLx) are anodes
- *     -> ENM LOW selects a column (100R pull-up drives it high), ROW LOW lights an LED
- * If the matrix stays dark or shows an inverted image, flip this value. */
-#define MATRIX_ANODE_ON_TOP 1
+#define MATRIX_ANODE_ON_TOP  1
 
 #define EN_ALL   (EN0_Pin | EN1_Pin | EN2_Pin | EN3_Pin)
 #define ENM_ALL  (ENM0_Pin | ENM1_Pin | ENM2_Pin | ENM3_Pin | \
@@ -67,19 +60,15 @@
 TIM_HandleTypeDef htim2;
 
 /* USER CODE BEGIN PV */
-/* Software timers (shared with the ISR -> volatile) */
 volatile int timer_counter[NUM_TIMERS] = {0};
 volatile int timer_flag[NUM_TIMERS]    = {0};
 
-/* Digital clock (Ex 5) */
 int hour = 15, minute = 8, second = 50;
 
-/* 7-segment displays (Ex 3) */
 const int MAX_LED = 4;
 int index_led = 0;
 int led_buffer[4] = {1, 2, 3, 4};
 
-/* LED matrix (Ex 9): one byte per column, bit0 = top row -> character "A" */
 const int MAX_LED_MATRIX = 8;
 int index_led_matrix = 0;
 uint8_t matrix_buffer[8] = {0xFC, 0xFE, 0x13, 0x11, 0x11, 0x13, 0xFE, 0xFC};
@@ -95,8 +84,6 @@ static void MX_TIM2_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-/* ======================= Software timers (Ex 6) ======================= */
 void setTimer(int id, int duration)
 {
     timer_flag[id]    = 0;
@@ -113,25 +100,21 @@ void timer_run(void)
     }
 }
 
-/* ======================= 7-segment (Ex 1-4) ======================= */
-/* bit0 = a ... bit6 = g, 1 = segment lit */
 static const uint8_t seg_code[10] = {
     0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F
 };
 
-/* Common anode on PB0-PB6: a segment is ON when its pin is LOW */
 void display7SEG(int num)
 {
     if (num < 0 || num > 9) return;
     uint8_t on = seg_code[num];
-    GPIOB->BSRR = ((uint32_t)on << 16)          /* reset -> segment ON  */
-                | ((uint32_t)(~on) & 0x7F);     /* set   -> segment OFF */
+    GPIOB->BSRR = ((uint32_t)on << 16)
+                | ((uint32_t)(~on) & 0x7F);
 }
 
-/* EN0-EN3 drive PNP transistors: LOW = display ON */
 void update7SEG(int index)
 {
-    HAL_GPIO_WritePin(GPIOA, EN_ALL, GPIO_PIN_SET);   /* all off first (no ghosting) */
+    HAL_GPIO_WritePin(GPIOA, EN_ALL, GPIO_PIN_SET);
     switch (index) {
         case 0:
             display7SEG(led_buffer[0]);
@@ -154,7 +137,6 @@ void update7SEG(int index)
     }
 }
 
-/* ======================= Digital clock (Ex 5) ======================= */
 void updateClockBuffer(void)
 {
     led_buffer[0] = hour / 10;
@@ -163,7 +145,6 @@ void updateClockBuffer(void)
     led_buffer[3] = minute % 10;
 }
 
-/* ======================= LED matrix (Ex 9) ======================= */
 static const uint16_t enm_pins[8] = {
     ENM0_Pin, ENM1_Pin, ENM2_Pin, ENM3_Pin,
     ENM4_Pin, ENM5_Pin, ENM6_Pin, ENM7_Pin
@@ -187,28 +168,23 @@ static void matrixColumnOn(int col)
 #endif
 }
 
-/* ROW0-ROW7 = PB8-PB15 */
 static void matrixWriteRows(uint8_t data)
 {
 #if MATRIX_ANODE_ON_TOP
     data = (uint8_t)~data;
 #endif
-    GPIOB->BSRR = ((uint32_t)data << 8)                 /* set   PB8-15 */
-                | ((uint32_t)(uint8_t)~data << 24);     /* reset PB8-15 */
+    GPIOB->BSRR = ((uint32_t)data << 8)
+                | ((uint32_t)(uint8_t)~data << 24);
 }
 
-/* Same idea as update7SEG: each case shows one column of matrix_buffer */
 void updateLEDMatrix(int index)
 {
     if (index < 0 || index >= MAX_LED_MATRIX) return;
-    matrixColumnsOff();                       /* all columns off first */
-    matrixWriteRows(matrix_buffer[index]);    /* load the column data  */
-    matrixColumnOn(index);                    /* enable this column    */
+    matrixColumnsOff();
+    matrixWriteRows(matrix_buffer[index]);
+    matrixColumnOn(index);
 }
 
-/* ======================= Animation (Ex 10) ======================= */
-/* Circular shift left: every column moves one step left,
- * the leftmost column wraps around to the right. */
 void shiftMatrixLeft(void)
 {
     uint8_t first = matrix_buffer[0];
@@ -217,7 +193,6 @@ void shiftMatrixLeft(void)
     }
     matrix_buffer[MAX_LED_MATRIX - 1] = first;
 }
-
 /* USER CODE END 0 */
 
 /**
@@ -250,7 +225,6 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  /* Safe initial state: all 7-seg and all matrix columns off */
   HAL_GPIO_WritePin(GPIOA, EN_ALL, GPIO_PIN_SET);
   matrixColumnsOff();
   updateClockBuffer();
@@ -270,7 +244,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    /* ---- Digital clock + DOT, every 1 s (Ex 5, 7) ---- */
     if (timer_flag[TMR_CLOCK]) {
         setTimer(TMR_CLOCK, CLOCK_PERIOD_MS);
         second++;
@@ -281,21 +254,18 @@ int main(void)
         HAL_GPIO_TogglePin(DOT_GPIO_Port, DOT_Pin);
     }
 
-    /* ---- 7-segment scanning (Ex 8) ---- */
     if (timer_flag[TMR_7SEG]) {
         setTimer(TMR_7SEG, SEG_SCAN_MS);
         update7SEG(index_led++);
         if (index_led >= MAX_LED) index_led = 0;
     }
 
-    /* ---- LED matrix scanning (Ex 9) ---- */
     if (timer_flag[TMR_MATRIX]) {
         setTimer(TMR_MATRIX, MATRIX_SCAN_MS);
         updateLEDMatrix(index_led_matrix++);
         if (index_led_matrix >= MAX_LED_MATRIX) index_led_matrix = 0;
     }
 
-    /* ---- Animation: shift "A" to the left (Ex 10) ---- */
     if (timer_flag[TMR_ANIM]) {
         setTimer(TMR_ANIM, ANIM_STEP_MS);
         shiftMatrixLeft();
@@ -379,9 +349,6 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN TIM2_Init 2 */
-  /* Safety net: the .ioc still has Prescaler = 0 / Period = 65535.
-   * Force the 10 ms tick: 8 MHz / (7999+1) = 1 kHz, / (9+1) = 100 Hz.
-   * (Better: set 7999 / 9 in the .ioc too, then this is harmless.) */
   htim2.Init.Prescaler = 7999;
   htim2.Init.Period = 9;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -450,7 +417,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/* Ex 8: the interrupt only runs the software timers, everything else is in main */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM2) {
