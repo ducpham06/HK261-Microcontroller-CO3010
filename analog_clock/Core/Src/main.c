@@ -54,7 +54,23 @@ static void MX_GPIO_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#define CLOCK_PINS_MASK 0xFFF0
 
+void clearAllClock(void) {
+    HAL_GPIO_WritePin(GPIOA, CLOCK_PINS_MASK, GPIO_PIN_SET);
+}
+
+void setNumberOnClock(int num) {
+    if (num >= 0 && num < 12) {
+        HAL_GPIO_WritePin(GPIOA, (uint16_t)(GPIO_PIN_4 << num), GPIO_PIN_RESET);
+    }
+}
+
+void clearNumberOnClock(int num) {
+    if (num >= 0 && num < 12) {
+        HAL_GPIO_WritePin(GPIOA, (uint16_t)(GPIO_PIN_4 << num), GPIO_PIN_SET);
+    }
+}
 /* USER CODE END 0 */
 
 /**
@@ -86,16 +102,40 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
-
+  int hour = 0;
+  int min = 0;
+  int sec = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* USER CODE END WHILE */
+      /* USER CODE END WHILE */
+      /* USER CODE BEGIN 3 */
+      int sec_pos = sec / 5;
+      int min_pos = min / 5;
+      int hour_pos = hour % 12;
 
-    /* USER CODE BEGIN 3 */
+      clearAllClock();
+      setNumberOnClock(sec_pos);
+      setNumberOnClock(min_pos);
+      setNumberOnClock(hour_pos);
+
+      HAL_Delay(100);
+
+      sec++;
+      if (sec >= 60) {
+          sec = 0;
+          min++;
+          if (min >= 60) {
+              min = 0;
+              hour++;
+              if (hour >= 12) {
+                  hour = 0;
+              }
+          }
+      }
   }
   /* USER CODE END 3 */
 }
