@@ -7,6 +7,7 @@ Release/
 *.o
 *.d
 *.su
+*.project
 
 # Ignore hex inside build folders (remove this line if you must track Debug/*.hex)
 Debug/*.hex
