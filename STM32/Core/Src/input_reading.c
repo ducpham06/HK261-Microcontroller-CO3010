@@ -21,7 +21,7 @@ static uint16_t counterForButtonPress1s[NO_OF_BUTTONS] = {0};
 static uint8_t button_pressed_flag[NO_OF_BUTTONS] = {0};
 
 void button_reading(void) {
-    for (char i = 0; i < NO_OF_BUTTONS; i++) {
+    for (uint8_t i = 0; i < NO_OF_BUTTONS; i++) {
         debounceButtonBuffer2[i] = debounceButtonBuffer1[i];
 
         if (i == 0) {
@@ -36,7 +36,7 @@ void button_reading(void) {
             if (buttonBuffer[i] != debounceButtonBuffer1[i]) {
                 buttonBuffer[i] = debounceButtonBuffer1[i];
                 if (buttonBuffer[i] == BUTTON_IS_PRESSED) {
-                    button_pressed_flag[i] = 1; // Registered single click event
+                    button_pressed_flag[i] = 1;
                 }
             }
 
@@ -45,7 +45,6 @@ void button_reading(void) {
                     counterForButtonPress1s[i]++;
                 } else {
                     flagForButtonPress1s[i] = 1;
-                    // Auto-increment trigger rate (every 500ms -> 50 ticks)
                     counterForButtonPress1s[i] = DURATION_FOR_AUTO_INCREASING - 50;
                     button_pressed_flag[i] = 1;
                 }
