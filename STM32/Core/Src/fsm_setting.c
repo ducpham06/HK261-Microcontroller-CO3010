@@ -2,6 +2,8 @@
  * fsm_setting.c
  *
  * Modes 2, 3, 4: modify the red, amber or green duration.
+ * Scheduler task every 10 ms.
+ *   - Button 1 goes to the next mode (2 -> 3 -> 4 -> 1).
  *   - The LEDs of the selected color blink at 2 Hz on both roads.
  *   - Button 2 increases the value being edited (1-99, wraps to 1).
  *   - Button 3 saves it. Unsaved changes are dropped when Button 1 changes mode.
@@ -86,7 +88,25 @@ void fsm_setting_enter(void) {
     setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
 }
 
-void fsm_setting_run(void) {
+static app_mode_t nextMode(void) {
+    switch (mode) {
+        case MODE_MODIFY_RED:   return MODE_MODIFY_AMBER;
+        case MODE_MODIFY_AMBER: return MODE_MODIFY_GREEN;
+        default:                return MODE_NORMAL;
+    }
+}
+
+void fsm_setting(void) {
+    if (mode != MODE_MODIFY_RED && mode != MODE_MODIFY_AMBER && mode != MODE_MODIFY_GREEN) {
+        return;
+    }
+
+    if (isButtonPressed(BUTTON_MODE)) {
+        fsm_enter_mode(nextMode());         // Unsaved edits are dropped
+        fsm_update_display();
+        return;
+    }
+
     if (isButtonPressed(BUTTON_INC)) {
         editValue = (editValue >= MAX_DURATION) ? MIN_DURATION : editValue + 1;
     }
@@ -102,6 +122,8 @@ void fsm_setting_run(void) {
         blinkOn = !blinkOn;
         showBlink();
     }
+
+    fsm_update_display();
 }
 
 int fsm_setting_getValue(void) {

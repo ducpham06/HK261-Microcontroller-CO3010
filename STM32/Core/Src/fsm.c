@@ -1,13 +1,8 @@
 /*
  * fsm.c
  *
- * Mode FSM. Button 1 moves between the modes:
- *
- *   MODE_NORMAL -> MODE_MODIFY_RED -> MODE_MODIFY_AMBER -> MODE_MODIFY_GREEN -> MODE_NORMAL
- *   MODE_MANUAL -> MODE_NORMAL
- *
- * Each mode has its own sub-FSM with an enter() function (entry actions)
- * and a run() function (events and transitions).
+ * Shared parts of the traffic light FSMs: mode changes, phase lights and
+ * the 7-segment output for each mode.
  */
 
 #include "fsm.h"
@@ -30,17 +25,6 @@ void setPhaseLights(phase_t p) {
     setRoadColor(ROAD_2, phaseColors[p][ROAD_2]);
 }
 
-static app_mode_t nextMode(app_mode_t current) {
-    switch (current) {
-        case MODE_NORMAL:       return MODE_MODIFY_RED;
-        case MODE_MODIFY_RED:   return MODE_MODIFY_AMBER;
-        case MODE_MODIFY_AMBER: return MODE_MODIFY_GREEN;
-        case MODE_MODIFY_GREEN: return MODE_NORMAL;
-        case MODE_MANUAL:       return MODE_NORMAL;
-        default:                return MODE_NORMAL;
-    }
-}
-
 void fsm_enter_mode(app_mode_t newMode) {
     mode = newMode;
 
@@ -50,25 +34,24 @@ void fsm_enter_mode(app_mode_t newMode) {
     clearTimer(TIMER_BLINK);
 
     switch (mode) {
-        case MODE_NORMAL:
-            fsm_automatic_enter();
-            break;
-        case MODE_MANUAL:
-            fsm_manual_enter();
-            break;
         case MODE_MODIFY_RED:
         case MODE_MODIFY_AMBER:
         case MODE_MODIFY_GREEN:
             fsm_setting_enter();
             break;
+        case MODE_MANUAL:
+            fsm_manual_enter();
+            break;
+        case MODE_NORMAL:
         default:
-            fsm_enter_mode(MODE_NORMAL);
+            mode = MODE_NORMAL;
+            fsm_automatic_enter();
             break;
     }
 }
 
-// Output: what the four 7-segment digits show in each mode
-static void updateDisplay(void) {
+// What the four 7-segment digits show in each mode
+void fsm_update_display(void) {
     switch (mode) {
         case MODE_NORMAL:
             // Left: road 1 countdown, right: road 2 countdown
@@ -98,33 +81,5 @@ void fsm_init(void) {
     display_init();
     clearAllTrafficLights();
     fsm_enter_mode(MODE_NORMAL);
-    updateDisplay();
-}
-
-void fsm_run(void) {
-    // Take this pass's button presses; unused presses are dropped
-    button_collect_events();
-
-    if (isButtonPressed(BUTTON_MODE)) {
-        fsm_enter_mode(nextMode(mode));
-    } else {
-        switch (mode) {
-            case MODE_NORMAL:
-                fsm_automatic_run();
-                break;
-            case MODE_MANUAL:
-                fsm_manual_run();
-                break;
-            case MODE_MODIFY_RED:
-            case MODE_MODIFY_AMBER:
-            case MODE_MODIFY_GREEN:
-                fsm_setting_run();
-                break;
-            default:
-                fsm_enter_mode(MODE_NORMAL);
-                break;
-        }
-    }
-
-    updateDisplay();
+    fsm_update_display();
 }

@@ -6,8 +6,8 @@
 
 #include "software_timer.h"
 
-static volatile int timer_counter[NUM_OF_TIMERS] = {0};
-static volatile int timer_flag[NUM_OF_TIMERS] = {0};
+static int timer_counter[NUM_OF_TIMERS] = {0};
+static int timer_flag[NUM_OF_TIMERS] = {0};
 
 void setTimer(timer_id_t id, int duration_ms) {
     if (id >= NUM_OF_TIMERS) return;
@@ -30,7 +30,7 @@ int isTimerExpired(timer_id_t id) {
     return 1;
 }
 
-void timerRun(void) {
+void timer_Run(void) {
     for (int i = 0; i < NUM_OF_TIMERS; i++) {
         if (timer_counter[i] > 0) {
             timer_counter[i]--;

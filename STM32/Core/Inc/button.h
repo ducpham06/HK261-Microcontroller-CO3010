@@ -3,11 +3,10 @@
  *
  * Debounced button input.
  *
- * button_reading() samples the pins in the TIM2 interrupt. The main loop
- * calls button_collect_events() once per pass: it takes a snapshot of the
- * presses and clears them, so isButtonPressed() answers for the current pass
- * only. A press that the current mode does not use is simply dropped and can
- * never be acted on later by another mode.
+ * getKeyInput() is a scheduler task that runs every TIMER_CYCLE ms. Each run
+ * drops the presses nobody used in the previous tick, then samples the pins.
+ * isButtonPressed() returns a press once and clears it, so when one FSM uses
+ * a press (for example to change mode) the next FSM task cannot use it again.
  */
 
 #ifndef INC_BUTTON_H_
@@ -26,16 +25,12 @@ typedef enum {
 #define BUTTON_IS_PRESSED   GPIO_PIN_RESET
 #define BUTTON_IS_RELEASED  GPIO_PIN_SET
 
-// Call once before starting TIM2
 void button_init(void);
 
-// Called from the TIM2 interrupt every TIMER_CYCLE ms
-void button_reading(void);
+// Scheduler task, every TIMER_CYCLE ms
+void getKeyInput(void);
 
-// Called once at the start of every main-loop pass
-void button_collect_events(void);
-
-// 1 if the button was pressed (or auto-repeated) since the previous pass
+// 1 once per press (or auto-repeat), then cleared
 int isButtonPressed(button_id_t id);
 
 #endif /* INC_BUTTON_H_ */

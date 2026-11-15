@@ -1,6 +1,7 @@
 /*
  * button.c
  *
+ * Runs as a scheduler task (getKeyInput) every TIMER_CYCLE ms.
  * Debounce: a new level is accepted only when three consecutive samples
  * (3 x TIMER_CYCLE = 30 ms) agree. A press event is raised on the
  * released -> pressed edge. Button 2 auto-repeats while held: the first
@@ -22,9 +23,7 @@ static GPIO_PinState keyReg2[NO_OF_BUTTONS];
 static GPIO_PinState stableState[NO_OF_BUTTONS];
 static uint16_t holdCounter[NO_OF_BUTTONS];
 
-// Written by the interrupt, consumed by button_collect_events()
-static volatile uint8_t pressFlag[NO_OF_BUTTONS];
-// Snapshot used by the FSMs during one main-loop pass
+// Presses found in the current tick, cleared when read
 static uint8_t pressEvent[NO_OF_BUTTONS];
 
 static GPIO_PinState readButton(int index) {
@@ -36,8 +35,10 @@ static GPIO_PinState readButton(int index) {
     }
 }
 
-void button_reading(void) {
+void getKeyInput(void) {
     for (int i = 0; i < NO_OF_BUTTONS; i++) {
+        pressEvent[i] = 0;      // Drop presses no FSM used in the previous tick
+
         keyReg0[i] = keyReg1[i];
         keyReg1[i] = keyReg2[i];
         keyReg2[i] = readButton(i);
@@ -49,11 +50,11 @@ void button_reading(void) {
 
         if (keyReg2[i] == BUTTON_IS_PRESSED) {
             if (stableState[i] == BUTTON_IS_RELEASED) {
-                pressFlag[i] = 1;                  // New press
+                pressEvent[i] = 1;                 // New press
                 holdCounter[i] = TICKS_FOR_1S;     // First repeat after 1 s
             } else if (allowAutoRepeat[i]) {
                 if (--holdCounter[i] == 0) {
-                    pressFlag[i] = 1;              // Repeat while held
+                    pressEvent[i] = 1;             // Repeat while held
                     holdCounter[i] = TICKS_FOR_AUTO_REPEAT;
                 }
             }
@@ -62,18 +63,10 @@ void button_reading(void) {
     }
 }
 
-void button_collect_events(void) {
-    for (int i = 0; i < NO_OF_BUTTONS; i++) {
-        pressEvent[i] = pressFlag[i];
-        if (pressEvent[i]) {
-            pressFlag[i] = 0;
-        }
-    }
-}
-
 int isButtonPressed(button_id_t id) {
-    if (id >= NO_OF_BUTTONS) return 0;
-    return pressEvent[id];
+    if (id >= NO_OF_BUTTONS || pressEvent[id] == 0) return 0;
+    pressEvent[id] = 0;
+    return 1;
 }
 
 void button_init(void) {
@@ -81,7 +74,6 @@ void button_init(void) {
     for (int i = 0; i < NO_OF_BUTTONS; i++) {
         keyReg0[i] = keyReg1[i] = keyReg2[i] = stableState[i] = BUTTON_IS_RELEASED;
         holdCounter[i] = 0;
-        pressFlag[i] = 0;
         pressEvent[i] = 0;
     }
 }

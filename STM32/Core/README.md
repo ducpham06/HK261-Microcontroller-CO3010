@@ -1,41 +1,49 @@
-# Lab 3 – Traffic light (STM32F103C6)
+# Lab 4 – Cooperative scheduler on top of the Lab 3 traffic light
 
-## Buttons (Lab 3 handout, section 5.1)
+## How it runs
 
-| Button | Role |
-|---|---|
-| Button 1 (PB0) | Select mode: 1 → 2 → 3 → 4 → 1 (from manual: back to mode 1) |
-| Button 2 (PB1) | Modes 2–4: increase the value (1–99; hold: +1 after 1 s, then every 0.5 s). Mode 1: enter manual mode. Manual: next phase |
-| Button 3 (PB2) | Modes 2–4: save the value |
+```
+TIM2 interrupt, every 10 ms  ->  SCH_Update()          (counts one tick, O(1))
+main loop                    ->  SCH_Dispatch_Tasks()  (runs every task that is due)
+```
 
-## Modes
-
-| Mode | Lights | 7-segment (left / right) |
+| Task | Period | Job |
 |---|---|---|
-| 1 Normal | R_G → R_A → G_R → A_R, timed | road 1 / road 2 countdown |
-| 2 Modify red | All red LEDs blink at 2 Hz | `02` / value |
-| 3 Modify amber | All amber LEDs blink at 2 Hz | `03` / value |
-| 4 Modify green | All green LEDs blink at 2 Hz | `04` / value |
-| Manual (extra) | Phase stepped by Button 2; 10 s idle → mode 1 | `00` / phase 01–04 |
+| `Led_Blink` | 1000 ms | Status LED (CubeMX pin labelled `LED`) |
+| `timer_Run` | 10 ms | Lab 3 software timers (1 s countdown, 2 Hz blink, 10 s manual timeout) |
+| `getKeyInput` | 10 ms | 3-sample debounce, Button 2 auto-repeat |
+| `fsm_manual` | 10 ms | Extra manual mode |
+| `fsm_automatic` | 10 ms | Mode 1 |
+| `fsm_setting` | 10 ms | Modes 2–4 |
+| `display_scan` | 10 ms | One 7-segment digit per run (25 Hz refresh) |
 
-The cycle needs red = amber + green. Saving red or amber sets green = red − amber;
-saving green sets red = amber + green. A save that would put any value outside
-1–99 is refused, and the display shows the stored value again.
-Changing mode with Button 1 without pressing Button 3 discards the edit.
+Tasks due on the same tick run in the order they were added, so the buttons
+are read before the FSMs use them. Only the FSM that owns the current mode does
+any work; each FSM handles Button 1 for its own modes.
 
-## Code structure
+## Scheduler design (`scheduler.c`)
 
-| File | Purpose |
-|---|---|
-| `software_timer.c` | Named software timers (`setTimer`, `isTimerExpired`), durations in ms |
-| `button.c` | 3-sample debounce in the interrupt; per-loop event snapshot |
-| `traffic_light.c` | Table-driven light outputs (`setRoadColor`, `setBothRoads`) |
-| `display7seg.c` | 4-digit multiplexing with blanking (10 ms per digit) |
-| `fsm.c` | Mode FSM (Button 1), phase→lights table, display output |
-| `fsm_automatic.c` | Mode 1 sub-FSM |
-| `fsm_setting.c` | Modes 2–4 sub-FSM |
-| `fsm_manual.c` | Manual sub-FSM |
-| `timer.c` | TIM2 callback: `button_reading()` + `timerRun()` every 10 ms |
+- **API:** `SCH_Add_Task(fn, delay_ms, period_ms)` returns a task ID
+  (`SCH_NO_TASK_ID` if full); `period_ms = 0` means one-shot.
+  `SCH_Delete_Task(id)` removes a task, including a task deleting itself.
+- **Sorted delta list:** tasks are linked in due-time order, and each stores its
+  delay relative to the task before it, so only the first task is decremented.
+- **O(1) interrupt:** `SCH_Update()` only increments a tick counter. The task list
+  is changed only in the main loop, so the interrupt can never interrupt a list
+  update. Ticks counted while a task was running are applied afterwards, so none
+  are lost.
+- **Fixed table of `SCH_MAX_TASKS` (16) tasks:** no `malloc`.
 
-The tick is `TIMER_CYCLE` in `software_timer.h`; it must match TIM2
-(Prescaler 7999, Period 9 at 8 MHz → 10 ms).
+## Buttons and modes
+
+Same as Lab 3: Button 1 selects mode 1 → 2 → 3 → 4 → 1, Button 2 increases the
+value, Button 3 saves it. In mode 1, Button 2 enters manual mode (Button 2 steps
+the phase; Button 1 or 10 s idle returns to mode 1). Saving keeps
+red = amber + green (red/amber saves set green = red − amber; a green save sets
+red = amber + green); a save that would leave 1–99 is refused.
+
+## Before building
+
+- TIM2: Prescaler 7999, Period 9 (10 ms at 8 MHz) – must equal `SCH_TICK_MS`.
+- Add a GPIO output labelled `LED` in CubeMX (e.g. PA0) for `Led_Blink`;
+  without it the build warns and the task does nothing.

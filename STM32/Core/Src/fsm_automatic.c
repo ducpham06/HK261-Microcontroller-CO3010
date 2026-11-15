@@ -1,9 +1,10 @@
 /*
  * fsm_automatic.c
  *
- * Mode 1 (normal): R_G -> R_A -> G_R -> A_R -> R_G
+ * Mode 1 (normal), scheduler task every 10 ms:
+ *   R_G -> R_A -> G_R -> A_R -> R_G
  * A phase ends when the countdown of the road that is not red reaches 0.
- * Button 2 switches to the extra manual mode.
+ * Button 1 goes to mode 2 (modify red); Button 2 goes to the manual mode.
  */
 
 #include "fsm.h"
@@ -43,12 +44,7 @@ void fsm_automatic_enter(void) {
     enterPhase(R_G);
 }
 
-void fsm_automatic_run(void) {
-    if (isButtonPressed(BUTTON_INC)) {
-        fsm_enter_mode(MODE_MANUAL);
-        return;
-    }
-
+static void countdownTick(void) {
     if (!isTimerExpired(TIMER_COUNTDOWN)) {
         return;
     }
@@ -75,4 +71,18 @@ void fsm_automatic_run(void) {
             enterPhase(R_G);
             break;
     }
+}
+
+void fsm_automatic(void) {
+    if (mode != MODE_NORMAL) return;
+
+    if (isButtonPressed(BUTTON_MODE)) {
+        fsm_enter_mode(MODE_MODIFY_RED);
+    } else if (isButtonPressed(BUTTON_INC)) {
+        fsm_enter_mode(MODE_MANUAL);
+    } else {
+        countdownTick();
+    }
+
+    fsm_update_display();
 }

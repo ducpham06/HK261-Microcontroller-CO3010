@@ -15,7 +15,7 @@
 #define DISABLE_7SEG    GPIO_PIN_SET
 
 #define NUM_OF_DIGITS   4
-#define SCAN_PERIOD_MS  10      // Time each digit stays on (25 Hz full refresh)
+#define SCAN_PERIOD_MS  10      // Period of the display_scan task (25 Hz full refresh)
 
 // Blank the display and reset the scan position
 void display_init(void);
@@ -23,7 +23,7 @@ void display_init(void);
 // Put two 2-digit numbers (0-99) into the display buffer
 void display_setNumbers(int left, int right);
 
-// Show the next digit; call every SCAN_PERIOD_MS
+// Scheduler task: show the next digit, every SCAN_PERIOD_MS
 void display_scan(void);
 
 #endif /* INC_DISPLAY7SEG_H_ */

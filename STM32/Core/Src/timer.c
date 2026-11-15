@@ -1,17 +1,15 @@
 /*
  * timer.c
  *
- * TIM2 interrupt callback: runs every TIMER_CYCLE (10 ms).
- * Only fast, non-blocking work happens here; the FSMs run in the main loop.
+ * TIM2 interrupt (timer_isr): every SCH_TICK_MS (10 ms) it only tells the
+ * scheduler that one tick has passed. All other work runs as tasks.
  */
 
 #include "main.h"
-#include "software_timer.h"
-#include "button.h"
+#include "scheduler.h"
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
     if (htim->Instance == TIM2) {
-        button_reading();
-        timerRun();
+        SCH_Update();
     }
 }
