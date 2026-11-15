@@ -22,7 +22,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "timer.h"
+#include "software_timer.h"
+#include "display7seg.h"
+#include "fsm.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,13 +91,12 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  // Start hardware timer TIM2 in interrupt mode (10ms tick)
-  HAL_TIM_Base_Start_IT(&htim2);
+  // Set up the application before the 10 ms interrupt starts using it
+  fsm_init();
+  setTimer(TIMER_SCAN, SCAN_PERIOD_MS);
 
-  // Initialize software timers
-  setTimer1(1000); // 1s traffic light step
-  setTimer2(250);  // 250ms toggle for 2 Hz LED blinking
-  setTimer3(5);    // 5ms multiplexing refresh for 7-segment displays
+  // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms tick (TIMER_CYCLE)
+  HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -105,7 +106,14 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    fsm_for_input_processing();
+    // Read buttons, run the active mode, update the display buffer
+    fsm_run();
+
+    // Multiplex the 7-segment display, one digit every SCAN_PERIOD_MS
+    if (isTimerExpired(TIMER_SCAN)) {
+      setTimer(TIMER_SCAN, SCAN_PERIOD_MS);
+      display_scan();
+    }
   }
   /* USER CODE END 3 */
 }
@@ -166,7 +174,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 7999;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 0;
+  htim2.Init.Period = 9;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
