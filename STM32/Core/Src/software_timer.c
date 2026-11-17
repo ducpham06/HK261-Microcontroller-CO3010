@@ -1,42 +1,27 @@
 /*
  * software_timer.c
- *
- * Software timer implementation
  */
 
 #include "software_timer.h"
 
-static volatile int timer_counter[NUM_OF_TIMERS] = {0};
-static volatile int timer_flag[NUM_OF_TIMERS] = {0};
+static volatile int timer_counter[NUM_OF_TIMERS];
+static volatile int timer_flag[NUM_OF_TIMERS];
 
-void setTimer(timer_id_t id, int duration_ms) {
-    if (id >= NUM_OF_TIMERS) return;
-    // Round up to whole ticks so a timer never fires early
-    int ticks = (duration_ms + TIMER_CYCLE - 1) / TIMER_CYCLE;
-    if (ticks <= 0) ticks = 1;
-    timer_flag[id] = 0;
-    timer_counter[id] = ticks;
+void setTimer(int index, int duration_ms) {
+    timer_flag[index] = 0;
+    timer_counter[index] = (duration_ms + TIMER_CYCLE - 1) / TIMER_CYCLE;
 }
 
-void clearTimer(timer_id_t id) {
-    if (id >= NUM_OF_TIMERS) return;
-    timer_counter[id] = 0;
-    timer_flag[id] = 0;
-}
-
-int isTimerExpired(timer_id_t id) {
-    if (id >= NUM_OF_TIMERS || timer_flag[id] == 0) return 0;
-    timer_flag[id] = 0;
+int isTimerExpired(int index) {
+    if (timer_flag[index] == 0) return 0;
+    timer_flag[index] = 0;
     return 1;
 }
 
-void timerRun(void) {
+void timer_Run(void) {
     for (int i = 0; i < NUM_OF_TIMERS; i++) {
-        if (timer_counter[i] > 0) {
-            timer_counter[i]--;
-            if (timer_counter[i] == 0) {
-                timer_flag[i] = 1;
-            }
-        }
+        if (timer_counter[i] <= 0) continue;
+        timer_counter[i]--;
+        if (timer_counter[i] == 0) timer_flag[i] = 1;
     }
 }

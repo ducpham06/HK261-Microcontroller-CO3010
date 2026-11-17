@@ -1,9 +1,7 @@
 /*
  * traffic_light.h
  *
- * Traffic light output driver.
- * LED cathodes are driven by PA1-PA6 with anodes tied to +3.3 V,
- * so a LOW output turns an LED on (active-low).
+ * LEDs and 7-segment digits. Everything is active-low.
  */
 
 #ifndef INC_TRAFFIC_LIGHT_H_
@@ -11,28 +9,17 @@
 
 #include "main.h"
 
-#define LIGHT_ON        GPIO_PIN_RESET
-#define LIGHT_OFF       GPIO_PIN_SET
+#define ON      GPIO_PIN_RESET
+#define OFF     GPIO_PIN_SET
 
-typedef enum {
-    ROAD_1 = 0,
-    ROAD_2,
-    NUM_OF_ROADS
-} road_t;
+void setLights(GPIO_PinState red1, GPIO_PinState amber1, GPIO_PinState green1,
+               GPIO_PinState red2, GPIO_PinState amber2, GPIO_PinState green2);
+void setPhaseLights(int phase);
 
-typedef enum {
-    COLOR_RED = 0,
-    COLOR_AMBER,
-    COLOR_GREEN,
-    COLOR_OFF
-} light_color_t;
+// Left number on EN0-EN1, right number on EN2-EN3 (0-99 each)
+void updateLedBuffer(int left, int right);
 
-// Show exactly one color (or none) on a road
-void setRoadColor(road_t road, light_color_t color);
-
-// Show the same color (or none) on both roads
-void setBothRoads(light_color_t color);
-
-void clearAllTrafficLights(void);
+// Show the next digit; call every 10 ms
+void display_scan(void);
 
 #endif /* INC_TRAFFIC_LIGHT_H_ */

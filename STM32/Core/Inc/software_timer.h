@@ -1,36 +1,20 @@
 /*
  * software_timer.h
- *
- * Software timers driven by the TIM2 interrupt.
- * All durations are given in milliseconds, so changing the hardware tick
- * only requires updating TIMER_CYCLE (Lab 3, Exercise 4).
  */
 
 #ifndef INC_SOFTWARE_TIMER_H_
 #define INC_SOFTWARE_TIMER_H_
 
-// TIM2 interrupt period in ms: 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms.
-// Keep this value equal to the real TIM2 period.
-#define TIMER_CYCLE 10
+#define TIMER_CYCLE         10      // timer_Run is called every 10 ms
 
-typedef enum {
-    TIMER_COUNTDOWN = 0,    // 1 s tick of the normal-mode countdown
-    TIMER_MANUAL_TIMEOUT,   // 10 s inactivity timeout in manual mode
-    TIMER_BLINK,            // 250 ms toggle -> 2 Hz blinking in modification modes
-    TIMER_SCAN,             // 7-segment multiplexing, one digit per expiry
-    NUM_OF_TIMERS
-} timer_id_t;
+#define TIMER_COUNTDOWN     0       // 1 s countdown in mode 1
+#define TIMER_MANUAL        1       // 10 s idle timeout in manual mode
+#define TIMER_BLINK         2       // 2 Hz blinking in modes 2-4
+#define TIMER_SCAN          3       // 7-segment scanning (Lab 3 only)
+#define NUM_OF_TIMERS       4
 
-// Start (or restart) a timer. A duration shorter than one tick lasts one tick.
-void setTimer(timer_id_t id, int duration_ms);
-
-// Stop a timer and discard a pending expiry.
-void clearTimer(timer_id_t id);
-
-// Returns 1 once when the timer has expired, then clears the expiry.
-int isTimerExpired(timer_id_t id);
-
-// Called from the TIM2 interrupt every TIMER_CYCLE ms.
-void timerRun(void);
+void setTimer(int index, int duration_ms);
+int isTimerExpired(int index);      // 1 once when expired, then cleared
+void timer_Run(void);
 
 #endif /* INC_SOFTWARE_TIMER_H_ */

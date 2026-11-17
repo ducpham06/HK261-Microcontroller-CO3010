@@ -23,7 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "software_timer.h"
-#include "display7seg.h"
+#include "traffic_light.h"
 #include "fsm.h"
 /* USER CODE END Includes */
 
@@ -53,7 +53,6 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -91,11 +90,10 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  // Set up the application before the 10 ms interrupt starts using it
-  fsm_init();
-  setTimer(TIMER_SCAN, SCAN_PERIOD_MS);
+  fsm_automatic_enter();
+  setTimer(TIMER_SCAN, 10);
 
-  // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms tick (TIMER_CYCLE)
+  // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms interrupt
   HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
@@ -106,12 +104,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    // Read buttons, run the active mode, update the display buffer
-    fsm_run();
+    fsm_automatic();
+    fsm_setting();
+    fsm_manual();
 
-    // Multiplex the 7-segment display, one digit every SCAN_PERIOD_MS
     if (isTimerExpired(TIMER_SCAN)) {
-      setTimer(TIMER_SCAN, SCAN_PERIOD_MS);
+      setTimer(TIMER_SCAN, 10);
       display_scan();
     }
   }
@@ -249,7 +247,6 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
 /* USER CODE END 4 */
 
 /**

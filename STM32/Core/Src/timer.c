@@ -1,17 +1,15 @@
 /*
  * timer.c
  *
- * TIM2 interrupt callback: runs every TIMER_CYCLE (10 ms).
- * Only fast, non-blocking work happens here; the FSMs run in the main loop.
+ * TIM2 interrupt, every 10 ms: read the buttons and run the software timers.
  */
 
 #include "main.h"
-#include "software_timer.h"
 #include "button.h"
+#include "software_timer.h"
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM2) {
-        button_reading();
-        timerRun();
-    }
+    if (htim->Instance != TIM2) return;
+    getKeyInput();
+    timer_Run();
 }

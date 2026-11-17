@@ -1,73 +1,59 @@
 /*
  * fsm_setting.c
  *
- * Modes 2, 3, 4: modify the red, amber or green duration.
- *   - The LEDs of the selected color blink at 2 Hz on both roads.
- *   - Button 2 increases the value being edited (1-99, wraps to 1).
- *   - Button 3 saves it. Unsaved changes are dropped when Button 1 changes mode.
+ * Modes 2, 3, 4: set the red, amber or green duration.
+ *   - The LEDs of that color blink at 2 Hz on both roads.
+ *   - Button 2 increases the value (1-99, then back to 1).
+ *   - Button 3 saves it. Button 1 goes to the next mode and drops an unsaved value.
+ *   - Display: mode number (02/03/04) on the left, value on the right.
  *
- * The cycle needs time_red = time_amber + time_green, so a save also updates
- * one other duration:
- *   - saving red or amber recomputes green = red - amber
- *   - saving green recomputes red = amber + green
- * A save that would push any duration outside 1-99 is refused, and the
- * display returns to the stored value.
+ * The cycle needs time_red = time_amber + time_green, so a save also changes
+ * one other value: saving red or amber sets green = red - amber, saving green
+ * sets red = amber + green. A save that would put any value outside 1-99 is
+ * refused and the stored value is shown again.
  */
 
 #include "fsm.h"
+#include "global.h"
 #include "button.h"
 #include "software_timer.h"
 #include "traffic_light.h"
 
-static int editValue;   // Value shown and changed by Button 2
-static int blinkOn;     // Current blink state of the selected LEDs
-
-static light_color_t selectedColor(void) {
-    switch (mode) {
-        case MODE_MODIFY_RED:   return COLOR_RED;
-        case MODE_MODIFY_AMBER: return COLOR_AMBER;
-        default:                return COLOR_GREEN;
-    }
-}
+static int value;       // Value being edited
+static int blinkOn;
 
 static int storedValue(void) {
     switch (mode) {
-        case MODE_MODIFY_RED:   return time_red;
-        case MODE_MODIFY_AMBER: return time_amber;
-        default:                return time_green;
+        case MODE_RED:   return time_red;
+        case MODE_AMBER: return time_amber;
+        default:         return time_green;
     }
 }
 
-static int inRange(int value) {
-    return value >= MIN_DURATION && value <= MAX_DURATION;
+static void showBlink(void) {
+    GPIO_PinState s = OFF;
+    if (blinkOn) s = ON;
+
+    switch (mode) {
+        case MODE_RED:   setLights(s, OFF, OFF, s, OFF, OFF); break;
+        case MODE_AMBER: setLights(OFF, s, OFF, OFF, s, OFF); break;
+        case MODE_GREEN: setLights(OFF, OFF, s, OFF, OFF, s); break;
+    }
 }
 
-// Returns 1 if the value was saved, 0 if it was refused
-static int saveValue(int value) {
+// Returns 0 if the value is refused
+static int saveValue(void) {
     int red = time_red;
     int amber = time_amber;
     int green = time_green;
 
     switch (mode) {
-        case MODE_MODIFY_RED:
-            red = value;
-            green = red - amber;
-            break;
-        case MODE_MODIFY_AMBER:
-            amber = value;
-            green = red - amber;
-            break;
-        case MODE_MODIFY_GREEN:
-            green = value;
-            red = amber + green;
-            break;
-        default:
-            return 0;
+        case MODE_RED:   red = value;   green = red - amber; break;
+        case MODE_AMBER: amber = value; green = red - amber; break;
+        case MODE_GREEN: green = value; red = amber + green; break;
     }
 
-    if (!inRange(red) || !inRange(amber) || !inRange(green)) {
-        return 0;
-    }
+    if (red < 1 || red > 99 || amber < 1 || green < 1) return 0;
 
     time_red = red;
     time_amber = amber;
@@ -75,35 +61,39 @@ static int saveValue(int value) {
     return 1;
 }
 
-static void showBlink(void) {
-    setBothRoads(blinkOn ? selectedColor() : COLOR_OFF);
+static void goToNextMode(void) {
+    if (mode == MODE_GREEN) {
+        fsm_automatic_enter();
+        return;
+    }
+    fsm_setting_enter(mode + 1);
 }
 
-void fsm_setting_enter(void) {
-    editValue = storedValue();
+void fsm_setting_enter(int newMode) {
+    mode = newMode;
+    value = storedValue();
     blinkOn = 1;
     showBlink();
     setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
+    updateLedBuffer(mode, value);
 }
 
-void fsm_setting_run(void) {
-    if (isButtonPressed(BUTTON_INC)) {
-        editValue = (editValue >= MAX_DURATION) ? MIN_DURATION : editValue + 1;
+void fsm_setting(void) {
+    if (mode != MODE_RED && mode != MODE_AMBER && mode != MODE_GREEN) return;
+
+    if (isButtonPressed(BUTTON_MODE)) {
+        goToNextMode();
+        return;
     }
 
-    if (isButtonPressed(BUTTON_SET)) {
-        if (!saveValue(editValue)) {
-            editValue = storedValue();      // Refused: show the stored value again
-        }
-    }
+    if (isButtonPressed(BUTTON_INC)) value = value % 99 + 1;
+    if (isButtonPressed(BUTTON_SET) && !saveValue()) value = storedValue();
 
     if (isTimerExpired(TIMER_BLINK)) {
         setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
         blinkOn = !blinkOn;
         showBlink();
     }
-}
 
-int fsm_setting_getValue(void) {
-    return editValue;
+    updateLedBuffer(mode, value);
 }
