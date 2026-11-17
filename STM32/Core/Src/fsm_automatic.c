@@ -6,14 +6,6 @@
 
 void fsm_automatic(void) {
     switch (status) {
-        case INIT:
-            status = AUTO_R_G;
-            countdown1 = time_red;
-            countdown2 = time_green;
-            setLights(RED1_Pin | GREEN2_Pin);
-            setTimer(TIMER_COUNTDOWN, 1000);
-            break;
-
         case AUTO_R_G:
             updateLedBuffer(countdown1, countdown2);
             if (isButtonPressed(BUTTON_MODE)) {

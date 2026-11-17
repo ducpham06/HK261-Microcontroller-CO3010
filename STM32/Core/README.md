@@ -6,9 +6,9 @@ Each FSM is one `switch (status)` with a case per state; states it does not own 
 
 | FSM | States |
 |---|---|
-| `fsm_automatic` | `INIT` → `AUTO_R_G` → `AUTO_R_A` → `AUTO_G_R` → `AUTO_A_R` |
-| `fsm_setting` | `SET_RED` → `SET_AMBER` → `SET_GREEN` → `INIT` |
-| `fsm_manual` | `MAN_R_G` → `MAN_R_A` → `MAN_G_R` → `MAN_A_R`, B1 or 10 s idle → `INIT` |
+| `fsm_automatic` | `AUTO_R_G` → `AUTO_R_A` → `AUTO_G_R` → `AUTO_A_R` (starts in `AUTO_R_G`) |
+| `fsm_setting` | `SET_RED` → `SET_AMBER` → `SET_GREEN` → `AUTO_R_G` |
+| `fsm_manual` | `MAN_R_G` → `MAN_R_A` → `MAN_G_R` → `MAN_A_R`, B1 or 10 s idle → `AUTO_R_G` |
 
 | Button | Role |
 |---|---|

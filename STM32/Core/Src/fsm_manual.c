@@ -9,7 +9,11 @@ void fsm_manual(void) {
         case MAN_R_G:
             updateLedBuffer(0, 1);
             if (isButtonPressed(BUTTON_MODE) || isTimerExpired(TIMER_MANUAL)) {
-                status = INIT;                  // Back to mode 1
+                status = AUTO_R_G;              // Back to mode 1
+                countdown1 = time_red;
+                countdown2 = time_green;
+                setLights(RED1_Pin | GREEN2_Pin);
+                setTimer(TIMER_COUNTDOWN, 1000);
                 break;
             }
             if (!isButtonPressed(BUTTON_INC)) break;
@@ -21,7 +25,11 @@ void fsm_manual(void) {
         case MAN_R_A:
             updateLedBuffer(0, 2);
             if (isButtonPressed(BUTTON_MODE) || isTimerExpired(TIMER_MANUAL)) {
-                status = INIT;
+                status = AUTO_R_G;              // Back to mode 1
+                countdown1 = time_red;
+                countdown2 = time_green;
+                setLights(RED1_Pin | GREEN2_Pin);
+                setTimer(TIMER_COUNTDOWN, 1000);
                 break;
             }
             if (!isButtonPressed(BUTTON_INC)) break;
@@ -33,7 +41,11 @@ void fsm_manual(void) {
         case MAN_G_R:
             updateLedBuffer(0, 3);
             if (isButtonPressed(BUTTON_MODE) || isTimerExpired(TIMER_MANUAL)) {
-                status = INIT;
+                status = AUTO_R_G;              // Back to mode 1
+                countdown1 = time_red;
+                countdown2 = time_green;
+                setLights(RED1_Pin | GREEN2_Pin);
+                setTimer(TIMER_COUNTDOWN, 1000);
                 break;
             }
             if (!isButtonPressed(BUTTON_INC)) break;
@@ -45,7 +57,11 @@ void fsm_manual(void) {
         case MAN_A_R:
             updateLedBuffer(0, 4);
             if (isButtonPressed(BUTTON_MODE) || isTimerExpired(TIMER_MANUAL)) {
-                status = INIT;
+                status = AUTO_R_G;              // Back to mode 1
+                countdown1 = time_red;
+                countdown2 = time_green;
+                setLights(RED1_Pin | GREEN2_Pin);
+                setTimer(TIMER_COUNTDOWN, 1000);
                 break;
             }
             if (!isButtonPressed(BUTTON_INC)) break;
