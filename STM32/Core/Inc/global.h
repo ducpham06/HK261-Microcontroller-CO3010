@@ -30,4 +30,8 @@ extern int time_green;
 extern int countdown1;
 extern int countdown2;
 
+// Modes 2-4: value being edited, and whether the LEDs are lit in the blink
+extern int edit_value;
+extern int blink_on;
+
 #endif /* INC_GLOBAL_H_ */

@@ -1,5 +1,4 @@
 #include "traffic_light.h"
-#include "global.h"
 
 #define ALL_LIGHTS  (RED1_Pin | AMBER1_Pin | GREEN1_Pin | RED2_Pin | AMBER2_Pin | GREEN2_Pin)
 #define ALL_EN      (EN0_Pin | EN1_Pin | EN2_Pin | EN3_Pin)
@@ -10,16 +9,6 @@
 
 void setLights(uint16_t onPins) {
     GPIOA->BSRR = ACTIVE_LOW(onPins, ALL_LIGHTS);
-}
-
-void setPhaseLights(int phase) {
-    switch (phase) {
-        case R_G: setLights(RED1_Pin | GREEN2_Pin);   break;
-        case R_A: setLights(RED1_Pin | AMBER2_Pin);   break;
-        case G_R: setLights(GREEN1_Pin | RED2_Pin);   break;
-        case A_R: setLights(AMBER1_Pin | RED2_Pin);   break;
-        default:  setLights(0);                       break;
-    }
 }
 
 /* ---------------- 7-segment display ---------------- */

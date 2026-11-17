@@ -9,7 +9,6 @@
 
 // Turn on exactly these LEDs, e.g. setLights(RED1_Pin | GREEN2_Pin); 0 = all off
 void setLights(uint16_t onPins);
-void setPhaseLights(int phase);
 
 // Left number on EN0-EN1, right number on EN2-EN3 (0-99 each)
 void updateLedBuffer(int left, int right);

@@ -9,3 +9,6 @@ int time_green = 3;
 
 int countdown1 = 5;
 int countdown2 = 3;
+
+int edit_value = 0;
+int blink_on = 0;
