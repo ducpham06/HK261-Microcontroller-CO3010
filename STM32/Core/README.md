@@ -6,7 +6,6 @@ The TIM2 callback is in `main.c`.
 
 | Task | Period |
 |---|---|
-| `Led_Blink` | 1000 ms (LED on PA0) |
 | `timer_Run`, `getKeyInput` | 10 ms |
 | `fsm_manual`, `fsm_automatic`, `fsm_setting` | 10 ms |
 | `display_scan` | `SCAN_PERIOD_MS` (20 ms) |
@@ -18,7 +17,8 @@ the task before it, so a tick only changes the first task. The interrupt only co
 the list is only changed in the main loop. 16 fixed slots, no `malloc`. A period of 0 runs a
 task once; `SCH_Delete_Task` also works on the task that is running.
 
-The traffic light files and button/mode behaviour are the same as Lab 3.
+The traffic light files (`global`, `software_timer`, `button`, `traffic_light`,
+`fsm_automatic`, `fsm_manual`, `fsm_setting`) and button/mode behaviour are the same as Lab 3.
 TIM2: Prescaler 7999, Period 9 (10 ms at 8 MHz) = `SCH_TICK_MS`.
 
 ## Simulation speed (Proteus)

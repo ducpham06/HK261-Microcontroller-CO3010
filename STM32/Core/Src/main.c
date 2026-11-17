@@ -26,7 +26,9 @@
 #include "software_timer.h"
 #include "button.h"
 #include "traffic_light.h"
-#include "fsm.h"
+#include "fsm_automatic.h"
+#include "fsm_manual.h"
+#include "fsm_setting.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,7 +57,6 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
-void Led_Blink(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -96,7 +97,6 @@ int main(void)
   fsm_automatic_enter();
 
   // Tasks due on the same tick run in this order
-  SCH_Add_Task(Led_Blink, 0, 1000);
   SCH_Add_Task(timer_Run, 0, 10);
   SCH_Add_Task(getKeyInput, 0, 10);
   SCH_Add_Task(fsm_manual, 0, 10);
@@ -256,11 +256,6 @@ static void MX_GPIO_Init(void)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   if (htim->Instance != TIM2) return;
   SCH_Update();
-}
-
-// Status LED (PA0, labelled LED in CubeMX), toggles every second
-void Led_Blink(void) {
-  HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 }
 /* USER CODE END 4 */
 
