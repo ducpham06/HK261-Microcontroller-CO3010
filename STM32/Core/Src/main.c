@@ -94,10 +94,6 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  // Start mode 1 in R_G (mode, phase and countdowns start so in global.c)
-  setLights(RED1_Pin | GREEN2_Pin);
-  setTimer(TIMER_COUNTDOWN, 1000);
-
   // Tasks due on the same tick run in this order
   SCH_Add_Task(timer_Run, 0, 10);
   SCH_Add_Task(getKeyInput, 0, 10);
