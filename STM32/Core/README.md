@@ -1,12 +1,12 @@
 # Lab 4 – Scheduler on top of the Lab 3 traffic light
 
 TIM2 interrupt every 10 ms: `SCH_Update()` (counts one tick).
-Main loop: `SCH_Dispatch_Tasks()`, then `SCH_Go_To_Sleep()` until the next interrupt.
+Main loop: `SCH_Dispatch_Tasks()`.
 The TIM2 callback is in `main.c`.
 
 | Task | Period |
 |---|---|
-| `Led_Blink` | 1000 ms (needs a CubeMX GPIO output labelled `LED`, e.g. PA0) |
+| `Led_Blink` | 1000 ms (LED on PA0) |
 | `timer_Run`, `getKeyInput` | 10 ms |
 | `fsm_manual`, `fsm_automatic`, `fsm_setting` | 10 ms |
 | `display_scan` | `SCAN_PERIOD_MS` (20 ms) |
@@ -27,5 +27,4 @@ TIM2: Prescaler 7999, Period 9 (10 ms at 8 MHz) = `SCH_TICK_MS`.
   (10 ms = steadiest, 20 ms default, 30–50 ms = fastest but visibly flickering).
 - LEDs and segments are written with one `BSRR` write per port, so all pins of a
   group switch at the same instant.
-- The 1 ms HAL tick is stopped after start-up and the CPU sleeps between 10 ms ticks.
 - In Proteus, setting the STM32's *Simulation mode* to PERFORMANCE also helps.

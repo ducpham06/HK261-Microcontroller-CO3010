@@ -21,9 +21,6 @@
 void SCH_Update(void);
 void SCH_Dispatch_Tasks(void);
 
-// Sleep until the next interrupt, unless a tick is already waiting
-void SCH_Go_To_Sleep(void);
-
 // Returns the task ID, or 0 if all SCH_MAX_TASKS slots are used
 uint32_t SCH_Add_Task(void (*pFunction)(void), uint32_t delay_ms, uint32_t period_ms);
 

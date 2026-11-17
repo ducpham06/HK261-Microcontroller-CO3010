@@ -107,9 +107,6 @@ int main(void)
   // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms interrupt
   HAL_TIM_Base_Start_IT(&htim2);
 
-  // The 1 ms HAL tick is not used after start-up; stopping it lets the CPU
-  // sleep for the whole 10 ms between scheduler ticks
-  HAL_SuspendTick();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -120,7 +117,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     SCH_Dispatch_Tasks();
-    SCH_Go_To_Sleep();
   }
   /* USER CODE END 3 */
 }
@@ -262,16 +258,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
   SCH_Update();
 }
 
-// Status LED, toggles every second. Needs a GPIO output labelled LED in CubeMX (e.g. PA0).
+// Status LED (PA0, labelled LED in CubeMX), toggles every second
 void Led_Blink(void) {
-#ifdef LED_GPIO_Port
   HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-#endif
 }
-
-#ifndef LED_GPIO_Port
-#warning "Led_Blink: no pin labelled LED in CubeMX, the status LED does nothing"
-#endif
 /* USER CODE END 4 */
 
 /**
