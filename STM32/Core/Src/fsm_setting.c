@@ -59,7 +59,11 @@ void fsm_setting(void) {
         case SET_GREEN:
             updateLedBuffer(4, edit_value);
             if (isButtonPressed(BUTTON_MODE)) {
-                status = INIT;                  // Back to mode 1
+                status = AUTO_R_G;              // Back to mode 1
+                countdown1 = time_red;
+                countdown2 = time_green;
+                setLights(RED1_Pin | GREEN2_Pin);
+                setTimer(TIMER_COUNTDOWN, 1000);
                 break;
             }
             if (isTimerExpired(TIMER_BLINK)) {

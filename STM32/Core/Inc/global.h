@@ -2,7 +2,6 @@
 #define INC_GLOBAL_H_
 
 // States. Road 1 color _ road 2 color.
-#define INIT                0
 
 // Mode 1 (fsm_automatic)
 #define AUTO_R_G            1
