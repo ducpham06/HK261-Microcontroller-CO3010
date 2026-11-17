@@ -1,7 +1,7 @@
 # Lab 3 – Traffic light (STM32F103C6)
 
 TIM2 interrupt every 10 ms: `getKeyInput()` + `timer_Run()`.
-Main loop: `fsm_automatic()`, `fsm_setting()`, `fsm_manual()`, and `display_scan()` every 10 ms.
+Main loop: `fsm_automatic()`, `fsm_setting()`, `fsm_manual()`, and `display_scan()` every `SCAN_PERIOD_MS`.
 Each FSM returns at once unless it owns the current mode, and enters the next mode by calling its `enter` function.
 
 | Button | Role |
@@ -28,3 +28,11 @@ Saving keeps red = amber + green (red or amber → green = red − amber; green 
 | `timer.c` | TIM2 callback |
 
 TIM2: Prescaler 7999, Period 9 (10 ms at 8 MHz).
+
+## Simulation speed (Proteus)
+
+- `SCAN_PERIOD_MS` in `traffic_light.h` sets how long each digit stays on
+  (10 ms = steadiest, 20 ms default, 30–50 ms = faster Proteus but visible flicker).
+- LEDs and segments are written with one `BSRR` write per port, so all pins of a
+  group switch at the same instant (fewer recalculations in Proteus).
+- Setting the STM32's *Simulation mode* to PERFORMANCE in Proteus also helps.

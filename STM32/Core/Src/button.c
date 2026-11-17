@@ -1,10 +1,3 @@
-/*
- * button.c
- *
- * A level is accepted after three equal samples (30 ms). Holding
- * Button 2 repeats the press after 1 s, then every 500 ms.
- */
-
 #include "main.h"
 #include "button.h"
 #include "software_timer.h"

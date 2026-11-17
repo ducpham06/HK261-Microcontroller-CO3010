@@ -1,18 +1,3 @@
-/*
- * fsm_setting.c
- *
- * Modes 2, 3, 4: set the red, amber or green duration.
- *   - The LEDs of that color blink at 2 Hz on both roads.
- *   - Button 2 increases the value (1-99, then back to 1).
- *   - Button 3 saves it. Button 1 goes to the next mode and drops an unsaved value.
- *   - Display: mode number (02/03/04) on the left, value on the right.
- *
- * The cycle needs time_red = time_amber + time_green, so a save also changes
- * one other value: saving red or amber sets green = red - amber, saving green
- * sets red = amber + green. A save that would put any value outside 1-99 is
- * refused and the stored value is shown again.
- */
-
 #include "fsm.h"
 #include "global.h"
 #include "button.h"
@@ -30,15 +15,19 @@ static int storedValue(void) {
     }
 }
 
-static void showBlink(void) {
-    GPIO_PinState s = OFF;
-    if (blinkOn) s = ON;
-
+// Both LEDs of the color being set
+static uint16_t colorPins(void) {
     switch (mode) {
-        case MODE_RED:   setLights(s, OFF, OFF, s, OFF, OFF); break;
-        case MODE_AMBER: setLights(OFF, s, OFF, OFF, s, OFF); break;
-        case MODE_GREEN: setLights(OFF, OFF, s, OFF, OFF, s); break;
+        case MODE_RED:   return RED1_Pin | RED2_Pin;
+        case MODE_AMBER: return AMBER1_Pin | AMBER2_Pin;
+        default:         return GREEN1_Pin | GREEN2_Pin;
     }
+}
+
+static void showBlink(void) {
+    uint16_t pins = 0;
+    if (blinkOn) pins = colorPins();
+    setLights(pins);
 }
 
 // Returns 0 if the value is refused

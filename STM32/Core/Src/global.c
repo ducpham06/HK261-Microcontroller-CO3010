@@ -1,7 +1,3 @@
-/*
- * global.c
- */
-
 #include "global.h"
 
 int mode = MODE_NORMAL;

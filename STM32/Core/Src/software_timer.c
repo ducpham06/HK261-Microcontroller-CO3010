@@ -1,7 +1,3 @@
-/*
- * software_timer.c
- */
-
 #include "software_timer.h"
 
 static volatile int timer_counter[NUM_OF_TIMERS];

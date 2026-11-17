@@ -91,7 +91,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   fsm_automatic_enter();
-  setTimer(TIMER_SCAN, 10);
+  setTimer(TIMER_SCAN, SCAN_PERIOD_MS);
 
   // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms interrupt
   HAL_TIM_Base_Start_IT(&htim2);
@@ -109,7 +109,7 @@ int main(void)
     fsm_manual();
 
     if (isTimerExpired(TIMER_SCAN)) {
-      setTimer(TIMER_SCAN, 10);
+      setTimer(TIMER_SCAN, SCAN_PERIOD_MS);
       display_scan();
     }
   }
