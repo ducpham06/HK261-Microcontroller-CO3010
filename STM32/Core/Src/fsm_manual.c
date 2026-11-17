@@ -1,38 +1,36 @@
 /*
  * fsm_manual.c
  *
- * Extra manual mode (entered with Button 2 from normal mode),
- * scheduler task every 10 ms:
- *   Button 2 steps R_G -> R_A -> G_R -> A_R -> R_G.
- *   Button 1 or 10 s without a press returns to normal mode.
+ * Manual mode: Button 2 steps R_G -> R_A -> G_R -> A_R -> R_G.
+ * Button 1 or 10 s without a press returns to mode 1.
+ * Display: 00 on the left, phase number 01-04 on the right.
  */
 
 #include "fsm.h"
+#include "global.h"
 #include "button.h"
 #include "software_timer.h"
+#include "traffic_light.h"
 
 void fsm_manual_enter(void) {
+    mode = MODE_MANUAL;
     phase = R_G;
     setPhaseLights(phase);
-    setTimer(TIMER_MANUAL_TIMEOUT, MANUAL_TIMEOUT_MS);
+    setTimer(TIMER_MANUAL, MANUAL_TIMEOUT_MS);
+    updateLedBuffer(0, phase + 1);
 }
 
 void fsm_manual(void) {
     if (mode != MODE_MANUAL) return;
 
-    if (isButtonPressed(BUTTON_MODE) || isTimerExpired(TIMER_MANUAL_TIMEOUT)) {
-        fsm_enter_mode(MODE_NORMAL);
-    } else if (isButtonPressed(BUTTON_INC)) {
-        switch (phase) {
-            case R_G: phase = R_A; break;
-            case R_A: phase = G_R; break;
-            case G_R: phase = A_R; break;
-            case A_R: phase = R_G; break;
-            default:  phase = R_G; break;
-        }
-        setPhaseLights(phase);
-        setTimer(TIMER_MANUAL_TIMEOUT, MANUAL_TIMEOUT_MS);   // Restart the idle timeout
+    if (isButtonPressed(BUTTON_MODE) || isTimerExpired(TIMER_MANUAL)) {
+        fsm_automatic_enter();
+        return;
     }
+    if (!isButtonPressed(BUTTON_INC)) return;
 
-    fsm_update_display();
+    phase = (phase + 1) % 4;        // Phases are numbered in cycle order
+    setPhaseLights(phase);
+    setTimer(TIMER_MANUAL, MANUAL_TIMEOUT_MS);
+    updateLedBuffer(0, phase + 1);
 }

@@ -1,15 +1,13 @@
 /*
  * timer.c
  *
- * TIM2 interrupt (timer_isr): every SCH_TICK_MS (10 ms) it only tells the
- * scheduler that one tick has passed. All other work runs as tasks.
+ * TIM2 interrupt, every 10 ms: only tell the scheduler a tick has passed.
  */
 
 #include "main.h"
 #include "scheduler.h"
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-    if (htim->Instance == TIM2) {
-        SCH_Update();
-    }
+    if (htim->Instance != TIM2) return;
+    SCH_Update();
 }

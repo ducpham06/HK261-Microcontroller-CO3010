@@ -25,7 +25,7 @@
 #include "scheduler.h"
 #include "software_timer.h"
 #include "button.h"
-#include "display7seg.h"
+#include "traffic_light.h"
 #include "fsm.h"
 /* USER CODE END Includes */
 
@@ -93,19 +93,18 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  SCH_Init();
-  fsm_init();
+  fsm_automatic_enter();
 
   // Tasks due on the same tick run in this order
   SCH_Add_Task(Led_Blink, 0, 1000);
-  SCH_Add_Task(timer_Run, 0, TIMER_CYCLE);        // 10 ms
-  SCH_Add_Task(getKeyInput, 0, TIMER_CYCLE);      // 10 ms
+  SCH_Add_Task(timer_Run, 0, 10);
+  SCH_Add_Task(getKeyInput, 0, 10);
   SCH_Add_Task(fsm_manual, 0, 10);
   SCH_Add_Task(fsm_automatic, 0, 10);
   SCH_Add_Task(fsm_setting, 0, 10);
-  SCH_Add_Task(display_scan, 0, SCAN_PERIOD_MS);  // 10 ms per 7-segment digit
+  SCH_Add_Task(display_scan, 0, 10);
 
-  // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms tick (SCH_TICK_MS)
+  // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms interrupt
   HAL_TIM_Base_Start_IT(&htim2);
   /* USER CODE END 2 */
 
@@ -177,7 +176,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 7999;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 99;
+  htim2.Init.Period = 9;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
@@ -215,20 +214,20 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LED_Pin|RED1_Pin|AMBER1_Pin|GREEN1_Pin
-                          |RED2_Pin|AMBER2_Pin|GREEN2_Pin|EN0_Pin
-                          |EN1_Pin|EN2_Pin|EN3_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, RED1_Pin|AMBER1_Pin|GREEN1_Pin|RED2_Pin
+                          |AMBER2_Pin|GREEN2_Pin|EN0_Pin|EN1_Pin
+                          |EN2_Pin|EN3_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, SEG_A_Pin|SEG_B_Pin|SEG_C_Pin|SEG_D_Pin
                           |SEG_E_Pin|SEG_F_Pin|SEG_G_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : LED_Pin RED1_Pin AMBER1_Pin GREEN1_Pin
-                           RED2_Pin AMBER2_Pin GREEN2_Pin EN0_Pin
-                           EN1_Pin EN2_Pin EN3_Pin */
-  GPIO_InitStruct.Pin = LED_Pin|RED1_Pin|AMBER1_Pin|GREEN1_Pin
-                          |RED2_Pin|AMBER2_Pin|GREEN2_Pin|EN0_Pin
-                          |EN1_Pin|EN2_Pin|EN3_Pin;
+  /*Configure GPIO pins : RED1_Pin AMBER1_Pin GREEN1_Pin RED2_Pin
+                           AMBER2_Pin GREEN2_Pin EN0_Pin EN1_Pin
+                           EN2_Pin EN3_Pin */
+  GPIO_InitStruct.Pin = RED1_Pin|AMBER1_Pin|GREEN1_Pin|RED2_Pin
+                          |AMBER2_Pin|GREEN2_Pin|EN0_Pin|EN1_Pin
+                          |EN2_Pin|EN3_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -252,15 +251,16 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-// Status LED: toggles every second while the scheduler is running.
-// Add a GPIO output labelled "LED" in CubeMX (for example PA0, which is free).
+// Status LED, toggles every second. Needs a GPIO output labelled LED in CubeMX (e.g. PA0).
 void Led_Blink(void) {
 #ifdef LED_GPIO_Port
   HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-#else
-#warning "Led_Blink: no pin labelled LED in CubeMX, the status LED does nothing"
 #endif
 }
+
+#ifndef LED_GPIO_Port
+#warning "Led_Blink: no pin labelled LED in CubeMX, the status LED does nothing"
+#endif
 /* USER CODE END 4 */
 
 /**
