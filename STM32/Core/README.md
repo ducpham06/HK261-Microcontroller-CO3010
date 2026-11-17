@@ -1,6 +1,6 @@
 # Lab 3 – Traffic light (STM32F103C6)
 
-TIM2 interrupt every 10 ms: `getKeyInput()` + `timer_Run()`.
+TIM2 interrupt every 10 ms (callback in `main.c`): `getKeyInput()` + `timer_Run()`.
 Main loop: `fsm_automatic()`, `fsm_setting()`, `fsm_manual()`, and `display_scan()` every `SCAN_PERIOD_MS`.
 Each FSM returns at once unless it owns the current mode, and enters the next mode by calling its `enter` function.
 
@@ -24,8 +24,9 @@ Saving keeps red = amber + green (red or amber → green = red − amber; green 
 | `software_timer.c` | `setTimer`, `isTimerExpired`, `timer_Run` |
 | `button.c` | 3-sample debounce, B2 auto-repeat |
 | `traffic_light.c` | `setLights`, `setPhaseLights`, 7-segment buffer and scanning |
-| `fsm_automatic.c`, `fsm_setting.c`, `fsm_manual.c` | One FSM per mode group |
-| `timer.c` | TIM2 callback |
+| `fsm_automatic.c/.h` | Mode 1 |
+| `fsm_setting.c/.h` | Modes 2–4 |
+| `fsm_manual.c/.h` | Manual mode |
 
 TIM2: Prescaler 7999, Period 9 (10 ms at 8 MHz).
 

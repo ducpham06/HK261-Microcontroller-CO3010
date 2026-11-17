@@ -1,4 +1,5 @@
-#include "fsm.h"
+#include "fsm_manual.h"
+#include "fsm_automatic.h"
 #include "global.h"
 #include "button.h"
 #include "software_timer.h"
