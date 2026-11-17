@@ -1,14 +1,3 @@
-/*
- * traffic_light.h
- *
- * LEDs (PA1-PA6) and 7-segment digits (segments PB3-PB9, enables PA7-PA10).
- * Everything is active-low.
- *
- * Each group of pins is changed with one BSRR write, so all its pins switch
- * at the same instant. Proteus then recalculates the LED/transistor circuit
- * once per write instead of once per pin, which keeps the simulation fast.
- */
-
 #ifndef INC_TRAFFIC_LIGHT_H_
 #define INC_TRAFFIC_LIGHT_H_
 

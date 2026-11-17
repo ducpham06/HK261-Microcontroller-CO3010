@@ -1,18 +1,3 @@
-/*
- * fsm_setting.c
- *
- * Modes 2, 3, 4: set the red, amber or green duration.
- *   - The LEDs of that color blink at 2 Hz on both roads.
- *   - Button 2 increases the value (1-99, then back to 1).
- *   - Button 3 saves it. Button 1 goes to the next mode and drops an unsaved value.
- *   - Display: mode number (02/03/04) on the left, value on the right.
- *
- * The cycle needs time_red = time_amber + time_green, so a save also changes
- * one other value: saving red or amber sets green = red - amber, saving green
- * sets red = amber + green. A save that would put any value outside 1-99 is
- * refused and the stored value is shown again.
- */
-
 #include "fsm.h"
 #include "global.h"
 #include "button.h"

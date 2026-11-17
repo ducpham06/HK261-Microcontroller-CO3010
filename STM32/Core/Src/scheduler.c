@@ -1,7 +1,3 @@
-/*
- * scheduler.c
- */
-
 #include "main.h"
 #include "scheduler.h"
 

@@ -1,10 +1,3 @@
-/*
- * traffic_light.c
- *
- * BSRR: writing 1 to bit n sets pin n high, writing 1 to bit n+16 sets it low.
- * All pins named in one write change together.
- */
-
 #include "traffic_light.h"
 #include "global.h"
 

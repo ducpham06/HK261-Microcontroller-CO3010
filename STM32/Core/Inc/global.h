@@ -1,9 +1,3 @@
-/*
- * global.h
- *
- * Modes, phases and shared variables of the traffic light
- */
-
 #ifndef INC_GLOBAL_H_
 #define INC_GLOBAL_H_
 

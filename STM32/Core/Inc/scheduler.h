@@ -1,15 +1,3 @@
-/*
- * scheduler.h
- *
- * Cooperative scheduler.
- *  - SCH_Update() runs in the 10 ms timer interrupt and only counts ticks.
- *  - SCH_Dispatch_Tasks() runs in the main loop and runs the tasks that are due.
- *  - Tasks wait in a list sorted by due time; each stores its delay relative
- *    to the task before it, so a tick only changes the first task.
- *  - Tasks due on the same tick run in the order they were added.
- * Delays and periods are in ms. A period of 0 runs the task once.
- */
-
 #ifndef INC_SCHEDULER_H_
 #define INC_SCHEDULER_H_
 

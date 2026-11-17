@@ -1,10 +1,3 @@
-/*
- * fsm_automatic.c
- *
- * Mode 1: R_G -> R_A -> G_R -> A_R -> R_G
- * A phase ends when the road that is not red reaches 0.
- */
-
 #include "fsm.h"
 #include "global.h"
 #include "button.h"
