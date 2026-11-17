@@ -73,6 +73,14 @@ void SCH_Dispatch_Tasks(void) {
     }
 }
 
+// Interrupts are disabled while checking, so a tick arriving right after the
+// check still wakes the CPU (WFI wakes on a pending interrupt even when masked).
+void SCH_Go_To_Sleep(void) {
+    __disable_irq();
+    if (pendingTicks == 0) __WFI();
+    __enable_irq();
+}
+
 uint32_t SCH_Add_Task(void (*pFunction)(void), uint32_t delay_ms, uint32_t period_ms) {
     int i = 0;
     while (i < SCH_MAX_TASKS && tasks[i].id != 0) i++;

@@ -30,15 +30,19 @@ static int storedValue(void) {
     }
 }
 
-static void showBlink(void) {
-    GPIO_PinState s = OFF;
-    if (blinkOn) s = ON;
-
+// Both LEDs of the color being set
+static uint16_t colorPins(void) {
     switch (mode) {
-        case MODE_RED:   setLights(s, OFF, OFF, s, OFF, OFF); break;
-        case MODE_AMBER: setLights(OFF, s, OFF, OFF, s, OFF); break;
-        case MODE_GREEN: setLights(OFF, OFF, s, OFF, OFF, s); break;
+        case MODE_RED:   return RED1_Pin | RED2_Pin;
+        case MODE_AMBER: return AMBER1_Pin | AMBER2_Pin;
+        default:         return GREEN1_Pin | GREEN2_Pin;
     }
+}
+
+static void showBlink(void) {
+    uint16_t pins = 0;
+    if (blinkOn) pins = colorPins();
+    setLights(pins);
 }
 
 // Returns 0 if the value is refused

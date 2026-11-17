@@ -1,44 +1,51 @@
 /*
  * traffic_light.c
+ *
+ * BSRR: writing 1 to bit n sets pin n high, writing 1 to bit n+16 sets it low.
+ * All pins named in one write change together.
  */
 
 #include "traffic_light.h"
 #include "global.h"
 
-void setLights(GPIO_PinState red1, GPIO_PinState amber1, GPIO_PinState green1,
-               GPIO_PinState red2, GPIO_PinState amber2, GPIO_PinState green2) {
-    HAL_GPIO_WritePin(RED1_GPIO_Port, RED1_Pin, red1);
-    HAL_GPIO_WritePin(AMBER1_GPIO_Port, AMBER1_Pin, amber1);
-    HAL_GPIO_WritePin(GREEN1_GPIO_Port, GREEN1_Pin, green1);
-    HAL_GPIO_WritePin(RED2_GPIO_Port, RED2_Pin, red2);
-    HAL_GPIO_WritePin(AMBER2_GPIO_Port, AMBER2_Pin, amber2);
-    HAL_GPIO_WritePin(GREEN2_GPIO_Port, GREEN2_Pin, green2);
+#define ALL_LIGHTS  (RED1_Pin | AMBER1_Pin | GREEN1_Pin | RED2_Pin | AMBER2_Pin | GREEN2_Pin)
+#define ALL_EN      (EN0_Pin | EN1_Pin | EN2_Pin | EN3_Pin)
+#define ALL_SEG     (SEG_A_Pin | SEG_B_Pin | SEG_C_Pin | SEG_D_Pin | SEG_E_Pin | SEG_F_Pin | SEG_G_Pin)
+
+// Active-low: pins to turn on go low (upper half), the others go high (lower half)
+#define ACTIVE_LOW(onPins, allPins)  (((uint32_t)(onPins) << 16) | ((allPins) & ~(onPins)))
+
+void setLights(uint16_t onPins) {
+    GPIOA->BSRR = ACTIVE_LOW(onPins, ALL_LIGHTS);
 }
 
 void setPhaseLights(int phase) {
     switch (phase) {
-        case R_G: setLights(ON, OFF, OFF,  OFF, OFF, ON);  break;
-        case R_A: setLights(ON, OFF, OFF,  OFF, ON,  OFF); break;
-        case G_R: setLights(OFF, OFF, ON,  ON,  OFF, OFF); break;
-        case A_R: setLights(OFF, ON,  OFF, ON,  OFF, OFF); break;
-        default:  setLights(OFF, OFF, OFF, OFF, OFF, OFF); break;
+        case R_G: setLights(RED1_Pin | GREEN2_Pin);   break;
+        case R_A: setLights(RED1_Pin | AMBER2_Pin);   break;
+        case G_R: setLights(GREEN1_Pin | RED2_Pin);   break;
+        case A_R: setLights(AMBER1_Pin | RED2_Pin);   break;
+        default:  setLights(0);                       break;
     }
 }
 
 /* ---------------- 7-segment display ---------------- */
 
-static GPIO_TypeDef *const segPort[7] = {
-    SEG_A_GPIO_Port, SEG_B_GPIO_Port, SEG_C_GPIO_Port, SEG_D_GPIO_Port,
-    SEG_E_GPIO_Port, SEG_F_GPIO_Port, SEG_G_GPIO_Port
+// Segments lit for each digit
+static const uint16_t digitSegments[10] = {
+    SEG_A_Pin | SEG_B_Pin | SEG_C_Pin | SEG_D_Pin | SEG_E_Pin | SEG_F_Pin,              // 0
+    SEG_B_Pin | SEG_C_Pin,                                                              // 1
+    SEG_A_Pin | SEG_B_Pin | SEG_D_Pin | SEG_E_Pin | SEG_G_Pin,                          // 2
+    SEG_A_Pin | SEG_B_Pin | SEG_C_Pin | SEG_D_Pin | SEG_G_Pin,                          // 3
+    SEG_B_Pin | SEG_C_Pin | SEG_F_Pin | SEG_G_Pin,                                      // 4
+    SEG_A_Pin | SEG_C_Pin | SEG_D_Pin | SEG_F_Pin | SEG_G_Pin,                          // 5
+    SEG_A_Pin | SEG_C_Pin | SEG_D_Pin | SEG_E_Pin | SEG_F_Pin | SEG_G_Pin,              // 6
+    SEG_A_Pin | SEG_B_Pin | SEG_C_Pin,                                                  // 7
+    SEG_A_Pin | SEG_B_Pin | SEG_C_Pin | SEG_D_Pin | SEG_E_Pin | SEG_F_Pin | SEG_G_Pin,  // 8
+    SEG_A_Pin | SEG_B_Pin | SEG_C_Pin | SEG_D_Pin | SEG_F_Pin | SEG_G_Pin,              // 9
 };
-static const uint16_t segPin[7] = {
-    SEG_A_Pin, SEG_B_Pin, SEG_C_Pin, SEG_D_Pin, SEG_E_Pin, SEG_F_Pin, SEG_G_Pin
-};
-static GPIO_TypeDef *const enPort[4] = {EN0_GPIO_Port, EN1_GPIO_Port, EN2_GPIO_Port, EN3_GPIO_Port};
-static const uint16_t enPin[4] = {EN0_Pin, EN1_Pin, EN2_Pin, EN3_Pin};
 
-// Bit 0 = segment A ... bit 6 = segment G, 1 = segment off
-static const uint8_t digitPattern[10] = {0x40, 0x79, 0x24, 0x30, 0x19, 0x12, 0x02, 0x78, 0x00, 0x10};
+static const uint16_t enPin[4] = {EN0_Pin, EN1_Pin, EN2_Pin, EN3_Pin};
 
 static int ledBuffer[4];
 static int scanIndex = 0;
@@ -51,13 +58,8 @@ void updateLedBuffer(int left, int right) {
 }
 
 void display_scan(void) {
-    // Turn every digit off first so the new pattern never shows on the old digit
-    for (int i = 0; i < 4; i++) {
-        HAL_GPIO_WritePin(enPort[i], enPin[i], OFF);
-    }
-    for (int s = 0; s < 7; s++) {
-        HAL_GPIO_WritePin(segPort[s], segPin[s], (GPIO_PinState)((digitPattern[ledBuffer[scanIndex]] >> s) & 1));
-    }
-    HAL_GPIO_WritePin(enPort[scanIndex], enPin[scanIndex], ON);
+    GPIOA->BSRR = ALL_EN;                                               // All digits off
+    GPIOB->BSRR = ACTIVE_LOW(digitSegments[ledBuffer[scanIndex]], ALL_SEG);
+    GPIOA->BSRR = (uint32_t)enPin[scanIndex] << 16;                     // This digit on
     scanIndex = (scanIndex + 1) % 4;
 }

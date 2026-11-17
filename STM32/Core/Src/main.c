@@ -102,10 +102,14 @@ int main(void)
   SCH_Add_Task(fsm_manual, 0, 10);
   SCH_Add_Task(fsm_automatic, 0, 10);
   SCH_Add_Task(fsm_setting, 0, 10);
-  SCH_Add_Task(display_scan, 0, 10);
+  SCH_Add_Task(display_scan, 0, SCAN_PERIOD_MS);
 
   // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms interrupt
   HAL_TIM_Base_Start_IT(&htim2);
+
+  // The 1 ms HAL tick is not used after start-up; stopping it lets the CPU
+  // sleep for the whole 10 ms between scheduler ticks
+  HAL_SuspendTick();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -116,6 +120,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     SCH_Dispatch_Tasks();
+    SCH_Go_To_Sleep();
   }
   /* USER CODE END 3 */
 }
@@ -251,6 +256,12 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+// TIM2 interrupt, every 10 ms: only tell the scheduler a tick has passed
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+  if (htim->Instance != TIM2) return;
+  SCH_Update();
+}
+
 // Status LED, toggles every second. Needs a GPIO output labelled LED in CubeMX (e.g. PA0).
 void Led_Blink(void) {
 #ifdef LED_GPIO_Port
