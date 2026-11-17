@@ -2,7 +2,13 @@
 
 TIM2 interrupt every 10 ms (callback in `main.c`): `getKeyInput()` + `timer_Run()`.
 Main loop: `fsm_automatic()`, `fsm_setting()`, `fsm_manual()`, and `display_scan()` every `SCAN_PERIOD_MS`.
-Each FSM returns at once unless it owns the current mode. A mode change sets `mode` and the new mode's lights, timer and values directly.
+Each FSM is one `switch (status)` with a case per state; states it does not own fall to `default`.
+
+| FSM | States |
+|---|---|
+| `fsm_automatic` | `INIT` → `AUTO_R_G` → `AUTO_R_A` → `AUTO_G_R` → `AUTO_A_R` |
+| `fsm_setting` | `SET_RED` → `SET_AMBER` → `SET_GREEN` → `INIT` |
+| `fsm_manual` | `MAN_R_G` → `MAN_R_A` → `MAN_G_R` → `MAN_A_R`, B1 or 10 s idle → `INIT` |
 
 | Button | Role |
 |---|---|
@@ -20,7 +26,7 @@ Saving keeps red = amber + green (red or amber → green = red − amber; green 
 
 | File | Contents |
 |---|---|
-| `global.c` | Mode, phase, durations, countdowns, value being set |
+| `global.c` | `status`, durations, countdowns, value being set |
 | `software_timer.c` | `setTimer`, `isTimerExpired`, `timer_Run` |
 | `button.c` | 3-sample debounce, B2 auto-repeat |
 | `traffic_light.c` | `setLights`, 7-segment buffer and scanning |

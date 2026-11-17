@@ -5,77 +5,79 @@
 #include "traffic_light.h"
 
 void fsm_setting(void) {
-    if (mode != MODE_RED && mode != MODE_AMBER && mode != MODE_GREEN) return;
-
-    updateLedBuffer(mode, edit_value);
-
-    // Button 1: next mode
-    if (isButtonPressed(BUTTON_MODE)) {
-        switch (mode) {
-            case MODE_RED:
-                mode = MODE_AMBER;
+    switch (status) {
+        case SET_RED:
+            updateLedBuffer(2, edit_value);
+            if (isButtonPressed(BUTTON_MODE)) {
+                status = SET_AMBER;             // Unsaved value is dropped
                 edit_value = time_amber;
                 blink_on = 1;
                 setLights(AMBER1_Pin | AMBER2_Pin);
                 setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
                 break;
-            case MODE_AMBER:
-                mode = MODE_GREEN;
+            }
+            if (isTimerExpired(TIMER_BLINK)) {
+                setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
+                blink_on = !blink_on;
+                setLights((RED1_Pin | RED2_Pin) * blink_on);
+            }
+            if (isButtonPressed(BUTTON_INC)) edit_value = edit_value % 99 + 1;
+            if (!isButtonPressed(BUTTON_SET)) break;
+            // Save: green = red - amber must stay >= 1, otherwise refused
+            if (edit_value > time_amber) {
+                time_red = edit_value;
+                time_green = time_red - time_amber;
+            }
+            edit_value = time_red;
+            break;
+
+        case SET_AMBER:
+            updateLedBuffer(3, edit_value);
+            if (isButtonPressed(BUTTON_MODE)) {
+                status = SET_GREEN;
                 edit_value = time_green;
                 blink_on = 1;
                 setLights(GREEN1_Pin | GREEN2_Pin);
                 setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
                 break;
-            case MODE_GREEN:
-                mode = MODE_NORMAL;
-                phase = R_G;
-                countdown1 = time_red;
-                countdown2 = time_green;
-                setLights(RED1_Pin | GREEN2_Pin);
-                setTimer(TIMER_COUNTDOWN, 1000);
+            }
+            if (isTimerExpired(TIMER_BLINK)) {
+                setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
+                blink_on = !blink_on;
+                setLights((AMBER1_Pin | AMBER2_Pin) * blink_on);
+            }
+            if (isButtonPressed(BUTTON_INC)) edit_value = edit_value % 99 + 1;
+            if (!isButtonPressed(BUTTON_SET)) break;
+            // Save: green = red - amber must stay >= 1, otherwise refused
+            if (edit_value < time_red) {
+                time_amber = edit_value;
+                time_green = time_red - time_amber;
+            }
+            edit_value = time_amber;
+            break;
+
+        case SET_GREEN:
+            updateLedBuffer(4, edit_value);
+            if (isButtonPressed(BUTTON_MODE)) {
+                status = INIT;                  // Back to mode 1
                 break;
-        }
-        return;
-    }
+            }
+            if (isTimerExpired(TIMER_BLINK)) {
+                setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
+                blink_on = !blink_on;
+                setLights((GREEN1_Pin | GREEN2_Pin) * blink_on);
+            }
+            if (isButtonPressed(BUTTON_INC)) edit_value = edit_value % 99 + 1;
+            if (!isButtonPressed(BUTTON_SET)) break;
+            // Save: red = amber + green must stay <= 99, otherwise refused
+            if (time_amber + edit_value <= 99) {
+                time_green = edit_value;
+                time_red = time_amber + time_green;
+            }
+            edit_value = time_green;
+            break;
 
-    // Blink the LEDs of the selected color
-    if (isTimerExpired(TIMER_BLINK)) {
-        setTimer(TIMER_BLINK, BLINK_TOGGLE_MS);
-        blink_on = !blink_on;
-        uint16_t pins = 0;
-        switch (mode) {
-            case MODE_RED:   pins = RED1_Pin | RED2_Pin;     break;
-            case MODE_AMBER: pins = AMBER1_Pin | AMBER2_Pin; break;
-            case MODE_GREEN: pins = GREEN1_Pin | GREEN2_Pin; break;
-        }
-        setLights(pins * blink_on);                 // blink_on = 0 turns them all off
-    }
-
-    // Button 2: increase the value
-    if (isButtonPressed(BUTTON_INC)) edit_value = edit_value % 99 + 1;
-
-    // Button 3: save the value
-    if (!isButtonPressed(BUTTON_SET)) return;
-
-    int red = time_red;
-    int amber = time_amber;
-    int green = time_green;
-    switch (mode) {
-        case MODE_RED:   red = edit_value;   green = red - amber; break;
-        case MODE_AMBER: amber = edit_value; green = red - amber; break;
-        case MODE_GREEN: green = edit_value; red = amber + green; break;
-    }
-
-    if (red <= 99 && amber >= 1 && green >= 1) {
-        time_red = red;
-        time_amber = amber;
-        time_green = green;
-    }
-
-    // Show the stored value (the new one, or the old one if refused)
-    switch (mode) {
-        case MODE_RED:   edit_value = time_red;   break;
-        case MODE_AMBER: edit_value = time_amber; break;
-        case MODE_GREEN: edit_value = time_green; break;
+        default:
+            break;
     }
 }
