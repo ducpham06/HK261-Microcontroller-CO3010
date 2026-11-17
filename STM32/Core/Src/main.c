@@ -93,7 +93,9 @@ int main(void)
   MX_GPIO_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  fsm_automatic_enter();
+  // Start mode 1 in R_G (mode, phase and countdowns start so in global.c)
+  setLights(RED1_Pin | GREEN2_Pin);
+  setTimer(TIMER_COUNTDOWN, 1000);
   setTimer(TIMER_SCAN, SCAN_PERIOD_MS);
 
   // 8 MHz / (7999 + 1) / (9 + 1) = 100 Hz -> 10 ms interrupt

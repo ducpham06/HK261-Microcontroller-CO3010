@@ -2,7 +2,7 @@
 
 TIM2 interrupt every 10 ms (callback in `main.c`): `getKeyInput()` + `timer_Run()`.
 Main loop: `fsm_automatic()`, `fsm_setting()`, `fsm_manual()`, and `display_scan()` every `SCAN_PERIOD_MS`.
-Each FSM returns at once unless it owns the current mode, and enters the next mode by calling its `enter` function.
+Each FSM returns at once unless it owns the current mode. A mode change sets `mode` and the new mode's lights, timer and values directly.
 
 | Button | Role |
 |---|---|
@@ -20,10 +20,10 @@ Saving keeps red = amber + green (red or amber → green = red − amber; green 
 
 | File | Contents |
 |---|---|
-| `global.c` | Mode, phase, durations, countdowns |
+| `global.c` | Mode, phase, durations, countdowns, value being set |
 | `software_timer.c` | `setTimer`, `isTimerExpired`, `timer_Run` |
 | `button.c` | 3-sample debounce, B2 auto-repeat |
-| `traffic_light.c` | `setLights`, `setPhaseLights`, 7-segment buffer and scanning |
+| `traffic_light.c` | `setLights`, 7-segment buffer and scanning |
 | `fsm_automatic.c/.h` | Mode 1 |
 | `fsm_setting.c/.h` | Modes 2–4 |
 | `fsm_manual.c/.h` | Manual mode |
